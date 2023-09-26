@@ -7,9 +7,8 @@ window.onload = function () {
     var conn;
     var msg = document.getElementById("msg");
     var log = document.getElementById("log");
-
     var text2 = document.getElementById("text2")
-
+    
     function appendLog(item) {
         var doScroll = log.scrollTop > log.scrollHeight - log.clientHeight - 1;
         log.appendChild(item);
@@ -17,18 +16,22 @@ window.onload = function () {
             log.scrollTop = log.scrollHeight - log.clientHeight;
         }
     }
-
-    document.getElementById("form").onsubmit = function () {
+    
+    document.getElementById("form").onsubmit = function (e) {
+        e.preventDefault();
         if (!conn) {
-            return false;
+            return
         }
         if (!msg.value && !text2.value) {
-            return false;
+            return
         }
         if (msg.value) {
-
-            var text = "message " + msg.value          
-            conn.send(text);
+            var obj = {     
+                        type: "message",
+                        message: msg.value
+                      }
+            conn.send(JSON.stringify(obj));
+            console.log(JSON.stringify(obj))
             msg.value = "";
         }
         else if (text2.value) {
@@ -36,12 +39,11 @@ window.onload = function () {
             conn.send(textexample)
             text2.value = "";
         }
-        return false;
+        return
     };
-
     if (window["WebSocket"]) {
         conn = new WebSocket("ws://" + document.location.host + "/ws");
-
+        
         conn.onclose = function (evt) {
             var item = document.createElement("div");
             item.innerHTML = "<b>Connection closed.</b>";
@@ -49,15 +51,11 @@ window.onload = function () {
         };
 
         conn.onmessage = function (evt) {
-            var messages = evt.data.split('\n');
-            console.log(evt.data)
-            for (var i = 0; i < messages.length; i++) {
-                var item = document.createElement("div");
-                item.innerText = messages[i];
-                appendLog(item);
-            }
+            var parsedObj = JSON.parse(evt.data)
+            var item = document.createElement("div")
+            item.innerText = parsedObj.message
+            appendLog(item)
         };
-        
     } else {
         var item = document.createElement("div");
         item.innerHTML = "<b>Your browser does not support WebSockets.</b>";
@@ -69,34 +67,29 @@ window.onload = function () {
 html {
     overflow: hidden;
 }
-
 body {
     overflow: hidden;
     padding: 0;
     margin: 0;
     width: 100%;
     height: 100%;
-    background: gray;
+    background: paleturquoise;
 }
-
 #log {
     background: white;
     margin: 0;
-    padding: 0.5em 0.5em 0.5em 0.5em;
+    padding: 0.5rem;
     position: absolute;
-    top: 0.5em;
-    left: 0.5em;
-    right: 0.5em;
-    bottom: 3em;
+    top: 0.5rem;
+    left: 0.5rem;
+    right: 0.5rem;
+    bottom: 3rem;
     overflow: auto;
 }
-
 #form {
-    padding: 0 0.5em 0 0.5em;
-    margin: 0;
     position: absolute;
-    bottom: 1em;
-    left: 0px;
+    bottom: 1rem;
+    left: 1rem;
     width: 100%;
     overflow: hidden;
 }

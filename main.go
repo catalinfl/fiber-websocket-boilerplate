@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
@@ -68,26 +67,32 @@ func main() {
 		register <- c
 
 		for {
-			messageType, message, err := c.ReadMessage()
+
+			var message Message
+
+			err := c.ReadJSON(&message)
+
+			fmt.Println(message.Type)
 
 			if err != nil {
+				messageType, p, err := c.ReadMessage()
+				if messageType == websocket.TextMessage {
+					obj := Message{
+						Type:    "message2",
+						Message: string(p),
+					}
+
+					broadcast <- obj
+					continue
+				}
+
 				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-					fmt.Println("Read error", err)
+					fmt.Println("err", err)
 				}
 				return
 			}
 
-			if messageType == websocket.TextMessage {
-
-				receivedMessage := Message{
-					Type:    strings.Split(string(message), " ")[0],
-					Message: strings.Split(string(message), " ")[1],
-				}
-
-				broadcast <- receivedMessage
-			} else {
-				fmt.Println("websocket message received of type", messageType)
-			}
+			broadcast <- message
 		}
 	}))
 
